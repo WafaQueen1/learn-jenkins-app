@@ -1,5 +1,5 @@
 pipeline {
-    agent none
+    agent all
 
     stages {
         stage('Build') {
@@ -54,9 +54,9 @@ pipeline {
 
     post {
         always {
-            node('any') {  // ← THIS FIXES THE ERROR
-                junit testResults: 'junit-results/junit.xml', allowEmptyResults: true
-            }
+            
+                junit testResults: 'junit-results/junit.xml
+            
         }
     }
 }
