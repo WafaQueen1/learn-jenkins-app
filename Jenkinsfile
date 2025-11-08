@@ -49,4 +49,10 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            // Publish JUnit test results
+            junit testResults: 'junit-results/junit.xml', allowEmptyResults: true
+        }
+    }
 }
