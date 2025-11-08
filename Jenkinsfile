@@ -1,5 +1,5 @@
 pipeline {
-    agent all
+    agent none  // Correct: let each stage define its agent
 
     stages {
         stage('Build') {
@@ -54,9 +54,9 @@ pipeline {
 
     post {
         always {
-            
-                junit 'junit-results/junit.xml'
-            
+            node('any') {  // REQUIRED: junit needs a node
+                junit testResults: 'junit-results/junit.xml', allowEmptyResults: true
+            }
         }
     }
 }
