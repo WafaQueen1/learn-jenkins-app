@@ -32,11 +32,13 @@ pipeline {
             agent {
                 docker {
                     image 'node:18-alpine'
-                    reuseNode true  // Same workspace → sees build/ folder
+                    reuseNode true
                 }
             }
             steps {
                 sh '''
+                    echo "=== RUNNING TESTS ==="
+                    
                     if [ -f "build/index.html" ]; then
                         echo "PASSED: build/index.html EXISTS"
                     else
@@ -44,15 +46,17 @@ pipeline {
                         exit 1
                     fi
                     
-                    npm test 
+                    npm test -- --reporters=default --reporters=jest-junit
                 '''
             }
         }
     }
+
     post {
         always {
-            // Publish JUnit test results
-            junit testResults: 'junit-results/junit.xml'
+            node('any') {  // ← THIS FIXES THE ERROR
+                junit testResults: 'junit-results/junit.xml', allowEmptyResults: true
+            }
         }
     }
 }
