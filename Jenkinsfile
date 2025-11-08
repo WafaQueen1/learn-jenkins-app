@@ -28,14 +28,4 @@ pipeline {
             }
         }
     }
-
-    post {
-        success {
-            echo 'Build successful! Archiving artifacts...'
-            archiveArtifacts artifacts: 'build/**', allowEmptyArchive: true
-        }
-        failure {
-            echo 'Build failed! Check logs above.'
-        }
-    }
-}
+}  
