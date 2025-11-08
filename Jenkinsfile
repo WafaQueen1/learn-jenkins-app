@@ -12,13 +12,17 @@ pipeline {
             steps {
                 sh '''
                     echo "=== BUILDING INSIDE DOCKER ==="
-                    ls -la             
+                    ls -la
+                    
                     npm --version
-                    npm ci                  
+                    npm ci
+                    
                     echo "=== RUNNING BUILD ==="
-                    npm run build                  
+                    npm run build
+                    
                     echo "=== BUILD OUTPUT (build/ folder) ==="
-                    ls -la build/                  
+                    ls -la build/
+                    
                     echo "Build completed successfully!"
                 '''
             }
