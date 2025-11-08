@@ -1,27 +1,37 @@
 pipeline {
-    agent none  // Best practice: let each stage define its agent
+    agent none
 
     stages {
         stage('Build') {
             agent {
                 docker {
                     image 'node:18-alpine'
-                    reuseNode true  // ← Fixed typo: reuseNose → reuseNode
+                    reuseNode true
                 }
             }
             steps {
                 sh '''
                     echo "=== BUILDING INSIDE DOCKER ==="
-                    ls -la
+                    ls -la             
                     npm --version
-                    npm ci
-                    npm run build
-                    echo "=== BUILD OUTPUT ==="
-                    ls -la dist/  # Show built files
+                    npm ci                  
+                    echo "=== RUNNING BUILD ==="
+                    npm run build                  
+                    echo "=== BUILD OUTPUT (build/ folder) ==="
+                    ls -la build/                  
+                    echo "Build completed successfully!"
                 '''
             }
         }
     }
 
-    
+    post {
+        success {
+            echo 'Build successful! Archiving artifacts...'
+            archiveArtifacts artifacts: 'build/**', allowEmptyArchive: true
+        }
+        failure {
+            echo 'Build failed! Check logs above.'
+        }
+    }
 }
