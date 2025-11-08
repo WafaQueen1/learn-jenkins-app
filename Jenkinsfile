@@ -40,7 +40,7 @@ pipeline {
             post {
                 always {
                     // THIS IS IN THE VIDEO — NO post at pipeline level
-                    junit 'junit-results/junit.xml'
+                    junit 'test-results/junit.xml'
                 }
             }
         }
