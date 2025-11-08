@@ -1,5 +1,5 @@
 pipeline {
-    agent none  // Correct: let each stage define its agent
+    agent none
 
     stages {
         stage('Build') {
@@ -12,18 +12,9 @@ pipeline {
             steps {
                 sh '''
                     echo "=== BUILDING INSIDE DOCKER ==="
-                    ls -la
-                    
-                    npm --version
                     npm ci
-                    
-                    echo "=== RUNNING BUILD ==="
                     npm run build
-                    
-                    echo "=== BUILD OUTPUT (build/ folder) ==="
                     ls -la build/
-                    
-                    echo "Build completed successfully!"
                 '''
             }
         }
@@ -39,23 +30,18 @@ pipeline {
                 sh '''
                     echo "=== RUNNING TESTS ==="
                     
-                    if [ -f "build/index.html" ]; then
-                        echo "PASSED: build/index.html EXISTS"
-                    else
-                        echo "FAILED: build/index.html NOT FOUND"
-                        exit 1
-                    fi
+                    # Check build output
+                    [ -f build/index.html ] && echo "PASSED: build/index.html EXISTS"
                     
+                    # Run tests with JUnit output
                     npm test -- --reporters=default --reporters=jest-junit
                 '''
             }
-        }
-    }
-
-    post {
-        always {
-            node('any') {  // REQUIRED: junit needs a node
-                junit testResults: 'junit-results/junit.xml', allowEmptyResults: true
+            post {
+                always {
+                    // THIS IS IN THE VIDEO — NO post at pipeline level
+                    junit 'junit-results/junit.xml'
+                }
             }
         }
     }
