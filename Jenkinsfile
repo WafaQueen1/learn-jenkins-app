@@ -30,9 +30,9 @@ pipeline {
                 sh '''
                     echo "=== RUNNING PLAYWRIGHT TESTS ==="
                     npm ci
-                    # Browsers already included in the image
-                    npx playwright test --reporter=html --output=test-results/
-                '''
+                     # Generate both HTML and JUnit reports
+                    npx playwright test --reporter=list,junit --output=test-results/
+                 '''
             }
             post {
                 always {
