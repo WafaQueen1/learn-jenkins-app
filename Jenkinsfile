@@ -11,7 +11,7 @@ pipeline {
             }
             steps {
                 sh '''
-                    echo "=== BUILDING PROJECT ==="
+                    echo "=== BUILDING INSIDE DOCKER ==="
                     npm ci
                     npm run build
                     ls -la build/
@@ -20,24 +20,53 @@ pipeline {
         }
 
         stage('Test') {
-            agent {
-                docker {
-                    image 'mcr.microsoft.com/playwright:v1.42.0-focal'
-                    reuseNode true
+            parallel {
+                stage('Junit test') {
+                    agent {
+                        docker {
+                            image 'node:18-alpine'
+                            reuseNode true
+                        }
+                    }
+                    steps {
+                        sh '''
+                            npm test
+                        '''
+                    }
+                    post {
+                        always {
+                            junit 'test-results/junit.xml'
+                        }
+                    }
                 }
-            }
-            steps {
-                sh '''
-                    echo "=== RUNNING PLAYWRIGHT TESTS ==="
-                    npm ci
-                     # Generate both HTML and JUnit reports
-                    npx playwright test --reporter=list,junit --output=test-results/
-                 '''
-            }
-            post {
-                always {
-                    // Only if your tests produce JUnit XML
-                    junit 'test-results/junit.xml'
+
+                stage('E2E') {
+                    agent {
+                        docker {
+                            image 'mcr.microsoft.com/playwright:v1.42.0-focal'
+                            reuseNode true
+                        }
+                    }
+                    steps {
+                        sh '''
+                            npm install serve
+                            node_modules/.bin/serve -s build & 
+                            sleep 10
+                            npx playwright test --reporter=html
+                        '''
+                    }
+                    post {
+                        always {
+                            publishHTML([
+                                allowMissing: false,
+                                alwaysLinkToLastBuild: false,
+                                keepAll: false,
+                                reportDir: 'playwright-report',
+                                reportFiles: 'index.html',
+                                reportName: 'Playwright E2E Report'
+                            ])
+                        }
+                    }
                 }
             }
         }
@@ -51,10 +80,8 @@ pipeline {
             }
             steps {
                 sh '''
-                    echo "=== DEPLOYING ==="
-                    npm install -g netlify-cli
-                    netlify --version
-                    # netlify deploy --dir=build --prod
+                    npm install netlify-cli
+                    node_modules/.bin/netlify --version
                 '''
             }
         }
