@@ -37,12 +37,22 @@ pipeline {
                     npm test -- --reporters=default --reporters=jest-junit
                 '''
             }
-            post {
-                always {
-                    // THIS IS IN THE VIDEO — NO post at pipeline level
-                    junit 'test-results/junit.xml'
+            
+        }
+        stage('Deploy') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
                 }
             }
+            steps {
+                sh '''
+                    npm install -g netlify-cli
+                    netlify --version
+                '''
+            }
         }
+
     }
 }
