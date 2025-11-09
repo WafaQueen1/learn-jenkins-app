@@ -41,23 +41,33 @@ pipeline {
                 }
 
                 stage('E2E') {
-    agent {
-        docker {
-            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
-            reuseNode true
-        }
-    }
-    steps {
-        sh '''
-            apt-get update && apt-get install -y netcat-openbsd
-            npm install serve
-            npx serve -s build -l 5000 &
-            timeout 20 bash -c "until nc -z localhost 5000; do sleep 1; done"
-            echo "✅ Server is running, you can now run Playwright tests here."
-        '''
-    }
-}
-
+                    agent {
+                        docker {
+                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                            reuseNode true
+                        }
+                    }
+                    steps {
+                        sh '''
+                            npm install serve
+                            node_modules/.bin/serve -s build & 
+                            sleep 10
+                            npx playwright test --reporter=html
+                        '''
+                    }
+                    post {
+                        always {
+                            publishHTML([
+                                allowMissing: false,
+                                alwaysLinkToLastBuild: false,
+                                keepAll: false,
+                                reportDir: 'playwright-report',
+                                reportFiles: 'index.html',
+                                reportName: 'Playwright E2E Report'
+                            ])
+                        }
+                    }
+                }
             }
         }
 
@@ -71,8 +81,7 @@ pipeline {
             steps {
                 sh '''
                     npm install netlify-cli
-                    npx netlify --version
-                    # Add your deployment commands here
+                    node_modules/.bin/netlify --version
                 '''
             }
         }
