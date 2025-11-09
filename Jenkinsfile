@@ -49,6 +49,9 @@ pipeline {
                     }
                     steps {
                         sh '''
+                        npx serve -s build &
+
+
                             # Run Playwright tests (webServer in playwright.config.js will start the app)
                             npx playwright test --reporter=html
                         '''
