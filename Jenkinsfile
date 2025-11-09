@@ -29,22 +29,14 @@ pipeline {
             steps {
                 sh '''
                     npm install serve
-                    node_mpdules/.bin/serve -s build &
-                    sleep 10
-                    npx playwright test --reporter=html
-  
+                    node_modules/.bin/serve -s build & 
+                    sleep 10
+                    npx playwright test --reporter=html
                 '''
             }
-            post {
-                always {
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: false,
-                        keepAll: false,
-                        reportDir: 'playwright-report',
-                        reportFiles: 'index.html',
-                        reportName: 'Playwright E2E Report'
-                    ])
+            post{
+                always{
+                     junit 'test-results/junit.xml'
                 }
             }
         }
@@ -56,13 +48,10 @@ pipeline {
                     reuseNode true
                 }
             }
-
             steps {
                 sh '''
-                   
-                    npm install  netlify-cli
-
-                    node_mpdules/.nbin/netlify --version
+                    npm install -g netlify-cli
+                    node_modules/.bin/netlify --version
                 '''
             }
         }
