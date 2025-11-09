@@ -50,8 +50,12 @@ pipeline {
                     steps {
                         sh '''
                             npm install serve
-                            node_modules/.bin/serve -s build & 
-                            sleep 10
+                            # Start server in background
+                            npx serve -s build -l 5000 &
+
+                            # Wait for server to be ready
+                            timeout 20 bash -c 'until nc -z localhost 5000; do sleep 1; done'
+
                             npx playwright test --reporter=html
                         '''
                     }
@@ -81,7 +85,8 @@ pipeline {
             steps {
                 sh '''
                     npm install netlify-cli
-                    node_modules/.bin/netlify --version
+                    npx netlify --version
+                    # Add your deployment commands here
                 '''
             }
         }
