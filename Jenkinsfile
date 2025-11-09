@@ -28,17 +28,11 @@ pipeline {
             }
             steps {
                 sh '''
-                    echo "=== STARTING STATIC SERVER ==="
-                    npm install -g serve
-                    serve -s build &
-                    SERVER_PID=$!
-                    sleep 10
-
-                    echo "=== RUNNING PLAYWRIGHT E2E TESTS ==="
-                    npx playwright test --reporter=html
-
-                    echo "Killing server (PID: $SERVER_PID)"
-                    kill $SERVER_PID || true
+                    npm install serve
+                    node_mpdules/.bin/serve -s build &
+                    sleep 10
+                    npx playwright test --reporter=html
+  
                 '''
             }
             post {
@@ -65,11 +59,10 @@ pipeline {
 
             steps {
                 sh '''
-                    echo "=== INSTALLING NETLIFY CLI ==="
-                    npm install -g netlify-cli
+                   
+                    npm install  netlify-cli
 
-                    echo "=== DEPLOYING TO NETLIFY ==="
-                    netlify deploy --dir=build --prod --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
+                    node_mpdules/.nbin/netlify --version
                 '''
             }
         }
