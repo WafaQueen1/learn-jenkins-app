@@ -11,7 +11,7 @@ pipeline {
             }
             steps {
                 sh '''
-                    echo "=== BUILDING INSIDE DOCKER ==="
+                    echo "=== BUILDING PROJECT ==="
                     npm ci
                     npm run build
                     ls -la build/
@@ -30,13 +30,14 @@ pipeline {
                 sh '''
                     echo "=== RUNNING PLAYWRIGHT TESTS ==="
                     npm ci
-                    npx playwright install
-                    npx playwright test --reporter=html --output test-results/
+                    # Browsers already included in the image
+                    npx playwright test --reporter=html --output=test-results/
                 '''
             }
             post {
                 always {
-                    junit 'test-results/junit.xml' // Make sure your Playwright tests generate JUnit XML
+                    // Only if your tests produce JUnit XML
+                    junit 'test-results/junit.xml'
                 }
             }
         }
@@ -50,9 +51,10 @@ pipeline {
             }
             steps {
                 sh '''
+                    echo "=== DEPLOYING ==="
                     npm install -g netlify-cli
-                    node_modules/.bin/netlify --version
-                    # Add deployment command here
+                    netlify --version
+                    # netlify deploy --dir=build --prod
                 '''
             }
         }
