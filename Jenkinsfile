@@ -22,21 +22,23 @@ pipeline {
         stage('Test') {
             agent {
                 docker {
-                    image 'node:18-alpine'
+                    image 'mcr.microsoft.com/playwright:v1.42.0-focal' // prebuilt Playwright image
                     reuseNode true
                 }
             }
             steps {
                 sh '''
-                    npm install serve
+                    echo "=== TESTING INSIDE DOCKER ==="
+                    npm ci
+                    npx playwright install  # installs browsers
                     node_modules/.bin/serve -s build & 
                     sleep 10
-                    npx playwright test --reporter=html
+                    npx playwright test --reporter=junit --output test-results
                 '''
             }
             post{
                 always{
-                     junit 'test-results/junit.xml'
+                     junit 'test-results/*.xml'
                 }
             }
         }
@@ -52,6 +54,8 @@ pipeline {
                 sh '''
                     npm install -g netlify-cli
                     node_modules/.bin/netlify --version
+                    # deploy command example:
+                    # node_modules/.bin/netlify deploy --dir=build --prod
                 '''
             }
         }
