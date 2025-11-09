@@ -45,8 +45,8 @@ pipeline {
                 always {
                     publishHTML([
                         allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
+                        alwaysLinkToLastBuild: false,
+                        keepAll: false,
                         reportDir: 'playwright-report',
                         reportFiles: 'index.html',
                         reportName: 'Playwright E2E Report'
