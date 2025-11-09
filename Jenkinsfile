@@ -28,17 +28,33 @@ pipeline {
             }
             steps {
                 sh '''
-                    echo "=== RUNNING TESTS ==="
-                    
-                    # Check build output
-                    [ -f build/index.html ] && echo "PASSED: build/index.html EXISTS"
-                    
-                    # Run tests with JUnit output
-                    npm test -- --reporters=default --reporters=jest-junit
+                    echo "=== STARTING STATIC SERVER ==="
+                    npm install -g serve
+                    serve -s build &
+                    SERVER_PID=$!
+                    sleep 10
+
+                    echo "=== RUNNING PLAYWRIGHT E2E TESTS ==="
+                    npx playwright test --reporter=html
+
+                    echo "Killing server (PID: $SERVER_PID)"
+                    kill $SERVER_PID || true
                 '''
             }
-            
+            post {
+                always {
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'playwright-report',
+                        reportFiles: 'index.html',
+                        reportName: 'Playwright E2E Report'
+                    ])
+                }
+            }
         }
+
         stage('Deploy') {
             agent {
                 docker {
@@ -46,13 +62,16 @@ pipeline {
                     reuseNode true
                 }
             }
+
             steps {
                 sh '''
+                    echo "=== INSTALLING NETLIFY CLI ==="
                     npm install -g netlify-cli
-                    netlify --version
+
+                    echo "=== DEPLOYING TO NETLIFY ==="
+                    netlify deploy --dir=build --prod --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
                 '''
             }
         }
-
     }
 }
