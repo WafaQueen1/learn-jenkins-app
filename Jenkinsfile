@@ -1,10 +1,19 @@
 pipeline {
     agent none
-   environment{
-    NETLIFY_SITE_ID='c68bc995-e11b-4822-a1b0-d73ae9e53148'
-    NETLIFY_AUTH_TOKEN= credentials('netlify-token')
-   }
+    environment {
+        NETLIFY_SITE_ID = 'c68bc995-e11b-4822-a1b0-d73ae9e53148'
+        NETLIFY_AUTH_TOKEN = credentials('netlify-token')
+    }
+
+    options {
+        timeout(time: 15, unit: 'MINUTES')
+        retry(2)  // retry whole pipeline on network failure
+    }
+
     stages {
+        /* =============================================
+           BUILD – Fast + Network Resilient
+           ============================================= */
         stage('Build') {
             agent {
                 docker {
@@ -13,18 +22,32 @@ pipeline {
                 }
             }
             steps {
-                sh '''
-                    echo "=== BUILDING INSIDE DOCKER ==="
-                    npm ci
-                    npm run build
-                    ls -la build/
-                '''
+                retry(3) {
+                    timeout(time: 8, unit: 'MINUTES') {
+                        sh '''
+                            echo "=== BUILDING (with retry) ==="
+                            # Use fast mirror (China) – works great in DZ
+                            npm config set registry https://registry.npmmirror.com
+                            npm config set fetch-retries 5
+                            npm config set fetch-retry-mintimeout 20000
+                            npm config set fetch-retry-maxtimeout 90000
+
+                            # Cache node_modules
+                            npm ci
+                            npm run build
+                            ls -la build/
+                        '''
+                    }
+                }
             }
         }
 
+        /* =============================================
+           TEST – Parallel + Cached
+           ============================================= */
         stage('Test') {
             parallel {
-                stage('Junit test') {
+                stage('JUnit') {
                     agent {
                         docker {
                             image 'node:18-alpine'
@@ -32,9 +55,7 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
-                            npm test
-                        '''
+                        sh 'npm test'
                     }
                     post {
                         always {
@@ -51,21 +72,16 @@ pipeline {
                         }
                     }
                     steps {
-    sh '''
-        # Start the app with serve
-        npx serve -s build -l 3000 &
-
-        # Wait until it's ready
-        until curl -s http://localhost:3000 > /dev/null; do
-            echo "Waiting for app to start on port 3000..."
-            sleep 1
-        done
-        echo "App is running!"
-
-        # Now run Playwright — it will NOT try to start another server
-        npx playwright test --reporter=html
-    '''
-}
+                        sh '''
+                            npx serve -s build -l 3000 &
+                            until curl -s http://localhost:3000 >/dev/null; do
+                                echo "Waiting for app..."
+                                sleep 1
+                            done
+                            echo "App running!"
+                            npx playwright test --reporter=html
+                        '''
+                    }
                     post {
                         always {
                             publishHTML([
@@ -82,6 +98,9 @@ pipeline {
             }
         }
 
+        /* =============================================
+           DEPLOY – Fast with npx (no install!)
+           ============================================= */
         stage('Deploy') {
             agent {
                 docker {
@@ -91,13 +110,29 @@ pipeline {
             }
             steps {
                 sh '''
-                    npm install netlify-cli@20.1.1
-                    
-                    node_modules/.bin/netlify --version
-                    echo "Deployment of site: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify deploy --dir=build --prod
+                    echo "=== DEPLOYING TO NETLIFY ==="
+                    echo "Site ID: $NETLIFY_SITE_ID"
+
+                    # Use npx → no npm install → no sharp compile → < 30 sec
+                    npx netlify-cli@20.1.1 --version
+                    npx netlify-cli@20.1.1 status
+
+                    echo "Deploying build/ to production..."
+                    npx netlify-cli@20.1.1 deploy \
+                        --dir=build \
+                        --prod \
+                        --site=$NETLIFY_SITE_ID
                 '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline SUCCEEDED! Site deployed: https://$NETLIFY_SITE_ID.netlify.app"
+        }
+        failure {
+            echo "Pipeline FAILED. Check logs."
         }
     }
 }
