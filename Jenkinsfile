@@ -93,7 +93,7 @@ pipeline {
                     npm install netlify-cli@20.1.1
                     
                     node_modules/.bin/netlify --version
-                    echo' deployemnt of site : $NETLIFY_SITE_ID'
+                    echo "Deployment of site: $NETLIFY_SITE_ID"
                 '''
             }
         }
