@@ -48,14 +48,21 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
-                        npx serve -s build &
+    sh '''
+        # Start the app with serve
+        npx serve -s build -l 3000 &
 
+        # Wait until it's ready
+        until curl -s http://localhost:3000 > /dev/null; do
+            echo "Waiting for app to start on port 3000..."
+            sleep 1
+        done
+        echo "App is running!"
 
-                            # Run Playwright tests (webServer in playwright.config.js will start the app)
-                            npx playwright test --reporter=html
-                        '''
-                    }
+        # Now run Playwright — it will NOT try to start another server
+        npx playwright test --reporter=html
+    '''
+}
                     post {
                         always {
                             publishHTML([

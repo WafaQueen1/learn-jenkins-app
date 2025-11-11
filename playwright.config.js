@@ -68,11 +68,21 @@ module.exports = defineConfig({
   //   url: 'http://127.0.0.1:3000',
   //   reuseExistingServer: !process.env.CI,
   // },
-    webServer: {
-      command: 'npm run build && npx serve -s build -l 3000',
-      url: 'http://localhost:3000',
-      reuseExistingServer: !process.env.CI,
-    },
+    // webServer: {
+    //   command: 'npm run build && npx serve -s build -l 3000',
+    //   url: 'http://localhost:3000',
+    //   reuseExistingServer: !process.env.CI,
+    // },
+    // playwright.config.js
+
+  webServer: {
+    command: 'npm run build &&  npx serve -s build -l 3000',
+    url: 'http://localhost:3000',
+    reuseExistingServer: true,   // ← THIS LINE IS THE KEY
+    timeout: 120 * 1000,
+  },
+
+
 
 });
 
