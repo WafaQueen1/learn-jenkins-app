@@ -128,11 +128,11 @@ pipeline {
     }
 
     post {
-        success {
-            echo "Pipeline SUCCEEDED! Site deployed: https://$NETLIFY_SITE_ID.netlify.app"
-        }
-        failure {
-            echo "Pipeline FAILED. Check logs."
-        }
+    success {
+        echo "Pipeline SUCCEEDED! Site deployed: https://${NETLIFY_SITE_ID}.netlify.app"
     }
+    failure {
+        echo "Pipeline FAILED. Check logs."
+    }
+}
 }
